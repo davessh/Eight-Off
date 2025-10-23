@@ -43,14 +43,14 @@ public class ListaSimple<T extends Comparable <? super T>> {
             inicio = null;
             return dato;
         }
-        Nodo<T> r = inicio;
-        Nodo<T> a = r;
-        while (r.getSiguiente() != null){
-            a=r;
-            r = r.getSiguiente();
+        Nodo<T> ref = inicio;
+        Nodo<T> anterior = ref;
+        while (ref.getSiguiente() != null){
+            anterior =ref;
+            ref = ref.getSiguiente();
         }
-        a.setSiguiente(null);
-        return r.getDato();
+        anterior .setSiguiente(null);
+        return ref.getDato();
     }
     public String mostrarLista(){
         String cadena = "";
@@ -97,6 +97,17 @@ public class ListaSimple<T extends Comparable <? super T>> {
         } while (huboCambios);
     }
 
+    //Pasa los datos de mi lista a un arrayList vacio
+    public List<T> convertirLista() {
+        ArrayList<T> lista = new ArrayList<>();
+        Nodo<T> actual = inicio;
+        while (actual != null) {
+            lista.add(actual.getDato());
+            actual = actual.getSiguiente();
+        }
+        return lista;
+    }
+
 
     public T getFin(){
         if (inicio == null){
@@ -119,15 +130,10 @@ public class ListaSimple<T extends Comparable <? super T>> {
         }
         return null;
     }
-    //Pasa los datos de mi lista a un arrayList vacio
-    public List<T> convertirLista() {
-        ArrayList<T> lista = new ArrayList<>();
-        Nodo<T> actual = inicio;
-        while (actual != null) {
-            lista.add(actual.getDato());
-            actual = actual.getSiguiente();
+    public void añadirFinal(ListaSimple<T> lista) {
+        for (T obj : lista.convertirLista()) {
+            insertaFinal(obj);
         }
-        return lista;
     }
 
     //Se extraen y eliminan los N elementos de la lista original, se devuelven en una nueva lista manteniendo el orden original
@@ -153,9 +159,6 @@ public class ListaSimple<T extends Comparable <? super T>> {
         }
         return listaResultado;
     }
-    public void añadirFinal(ListaSimple<T> lista) {
-        for (T obj : lista.convertirLista()) {
-            insertaFinal(obj);
-        }
+
     }
 }
