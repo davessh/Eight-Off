@@ -55,7 +55,7 @@ public class ListaSimple<T extends Comparable <? super T>> {
     public String mostrarLista(){
         String cadena = "";
         if (inicio == null){
-            return "La lista esta vacia";
+            return "La lista se encuentra vacia";
         }
         Nodo<T> iter = inicio;
         while (iter.getSiguiente() != null){
@@ -161,4 +161,5 @@ public class ListaSimple<T extends Comparable <? super T>> {
     }
 
     }
-}
+
+
