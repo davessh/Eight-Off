@@ -66,4 +66,17 @@ public abstract class Carta implements Comparable<Carta> {
     public int getValorBajo() {
         return valorBajo;
     }
+    public void ponerBocaArriba(){
+        faceup = true;
+    }
+    public boolean estaCaraArriba(){
+        return faceup;
+    }
+
+    public void ponerBocaAbajo(){
+        faceup = false;
+    }
+    public boolean estaCaraAbajo(){
+        return faceup;
+    }
 }
