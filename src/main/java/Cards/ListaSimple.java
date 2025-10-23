@@ -159,7 +159,6 @@ public class ListaSimple<T extends Comparable <? super T>> {
         }
         return listaResultado;
     }
-
     }
 
 
