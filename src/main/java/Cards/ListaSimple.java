@@ -2,7 +2,7 @@ package Cards;
 
 import java.util.*;
 
-public class ListaSimple<T extends Comparable <? super T>> {
+public class ListaSimple<T> {
     private Nodo<T> inicio;
     public ListaSimple() {
         this.inicio = null;
@@ -79,17 +79,18 @@ public class ListaSimple<T extends Comparable <? super T>> {
         return size;
     }
 
-    public void ordenarLista() {
+    public void ordenarLista(){
+        Comparator<T> cmp = (a, b) -> ((Comparable<? super T>) a).compareTo(b);
         boolean huboCambios;
         do {
             huboCambios = false;
             Nodo<T> actual = inicio;
             while (actual != null && actual.getSiguiente() != null) {
                 Nodo<T> sig = actual.getSiguiente();
-                if (actual.getDato().compareTo(sig.getDato()) > 0) {
-                    T temp = actual.getDato();
+                if (cmp.compare(actual.getDato(), sig.getDato()) > 0) {
+                    T tmp = actual.getDato();
                     actual.setInfo(sig.getDato());
-                    sig.setInfo(temp);
+                    sig.setInfo(tmp);
                     huboCambios = true;
                 }
                 actual = sig;
@@ -158,6 +159,12 @@ public class ListaSimple<T extends Comparable <? super T>> {
             listaResultado.insertaFinal(getPosicion(i));
         }
         return listaResultado;
+    }
+
+    public void addAllFinal(ListaSimple<T> lista) {
+        for (T x : lista.convertirLista()) {
+            insertaFinal(x);
+        }
     }
     }
 
