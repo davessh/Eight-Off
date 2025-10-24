@@ -2,7 +2,7 @@ package EightOffJuego;
 
 import Cards.*;
 public class Tableu {
-    private ListaSimple<Carta> tableu = new ListaSimple<>();
+    private ListaSimple<Carta> tableau = new ListaSimple<>();
     private boolean reyEnVacio = false;
 
     public Tableu() {
@@ -10,34 +10,34 @@ public class Tableu {
     }
 
     public int getTam() {
-        return tableu.getSize();
+        return tableau.getSize();
     }
 
     public boolean estaVacio() {
-        return tableu.getSize() == 0;
+        return tableau.getSize() == 0;
     }
 
     public Carta verCarta() {
-        return tableu.getFin();
+        return tableau.getFin();
     }
 
     public Carta sacarCarta() {
-        return tableu.eliminaFinal();
+        return tableau.eliminaFinal();
     }
 
     public void insertarCarta(Carta carta) {
-        tableu.insertaFinal(carta);
+        tableau.insertaFinal(carta);
     }
 
     public void limpiarCartas() {
-        while (tableu.eliminaFinal() != null) {
+        while (tableau.eliminaFinal() != null) {
         }
     }
     public boolean ponerCarta(Carta carta){
         if (!esMovimientoValido(carta)) {
             return false;
         }
-        tableu.insertaFinal(carta);
+        tableau.insertaFinal(carta);
         return true;
     }
 
