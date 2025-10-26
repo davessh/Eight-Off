@@ -3,6 +3,7 @@ package EightOffJuego;
 import Cards.*;
 import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
+import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -50,6 +51,12 @@ public class EightOffController {
         tableausPanes = new ArrayList<>();
 
         crearEstructuraVisual();
+
+        // ✓ AGREGADO: Iniciar el juego automáticamente
+        juego.iniciarNuevaPartida();
+        actualizarInterfaz();
+        lblEstado.setText("¡Juego iniciado! Buena suerte.");
+        lblMovimientos.setText("Movimientos: 0");
     }
 
     private void crearEstructuraVisual() {
@@ -216,7 +223,7 @@ public class EightOffController {
         }
 
         String msg = construirMensajePista(pista);
-        lblEstado.setText("Pista: " + msg);
+        lblEstado.setText("💡 Pista: " + msg);
 
         // Resaltar las áreas involucradas
         resaltarMovimientoPista(pista);
@@ -234,9 +241,76 @@ public class EightOffController {
         return "Mover de " + origen + " a " + destino;
     }
 
+    // ✓ IMPLEMENTADO: Resaltar el movimiento sugerido
     private void resaltarMovimientoPista(Movimiento mov) {
-        // Implementar resaltado temporal de las áreas involucradas
-        // Por simplicidad, solo mostramos el mensaje
+        Region origenRegion = null;
+        Region destinoRegion = null;
+
+        // Identificar región de origen
+        if (mov.getOrigen() == Movimiento.Zona.TABLEAU) {
+            origenRegion = tableausPanes.get(mov.getIndiceOrigen());
+        } else if (mov.getOrigen() == Movimiento.Zona.RESERVA) {
+            origenRegion = reservasPanes.get(mov.getIndiceOrigen());
+        }
+
+        // Identificar región de destino
+        if (mov.getDestino() == Movimiento.Zona.TABLEAU) {
+            destinoRegion = tableausPanes.get(mov.getIndiceDestino());
+        } else if (mov.getDestino() == Movimiento.Zona.RESERVA) {
+            destinoRegion = reservasPanes.get(mov.getIndiceDestino());
+        } else if (mov.getDestino() == Movimiento.Zona.FUNDACION) {
+            destinoRegion = foundationsPanes.get(mov.getIndiceDestino());
+        }
+
+        // Aplicar efecto de brillo dorado en origen
+        if (origenRegion != null) {
+            aplicarResaltadoTemporal(origenRegion, Color.GOLD, 1.5);
+        }
+
+        // Aplicar efecto de brillo verde en destino
+        if (destinoRegion != null) {
+            aplicarResaltadoTemporal(destinoRegion, Color.LIMEGREEN, 1.5);
+        }
+    }
+
+    private void aplicarResaltadoTemporal(Region region, Color color, double duracionSegundos) {
+        // Guardar estilo original
+        String estiloOriginal = region.getStyle();
+
+        // Aplicar efecto de brillo
+        Glow glow = new Glow(0.8);
+        region.setEffect(glow);
+
+        // Agregar borde brillante
+        String nuevoEstilo = estiloOriginal +
+                String.format("-fx-border-color: %s; -fx-border-width: 5; -fx-border-style: solid;",
+                        toRgbString(color));
+        region.setStyle(nuevoEstilo);
+
+        // Animación de escala
+        ScaleTransition st = new ScaleTransition(Duration.millis(200), region);
+        st.setFromX(1.0);
+        st.setFromY(1.0);
+        st.setToX(1.1);
+        st.setToY(1.1);
+        st.setCycleCount(2);
+        st.setAutoReverse(true);
+        st.play();
+
+        // Remover efectos después de la duración especificada
+        PauseTransition pause = new PauseTransition(Duration.seconds(duracionSegundos));
+        pause.setOnFinished(e -> {
+            region.setEffect(null);
+            region.setStyle(estiloOriginal);
+        });
+        pause.play();
+    }
+
+    private String toRgbString(Color color) {
+        return String.format("rgb(%d,%d,%d)",
+                (int)(color.getRed() * 255),
+                (int)(color.getGreen() * 255),
+                (int)(color.getBlue() * 255));
     }
 
     private void actualizarInterfaz() {
@@ -579,12 +653,12 @@ public class EightOffController {
     }
 
     private void mostrarVictoria() {
-        lblEstado.setText("🎉 ¡FELICIDADES! ¡HAS GANADO! 🎉");
+        lblEstado.setText("FELICIDADES! ¡HAS GANADO! ");
         lblEstado.setStyle(lblEstado.getStyle() + "-fx-text-fill: #FFD700; -fx-font-size: 20px;");
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("¡Victoria!");
-        alert.setHeaderText("🎉 ¡Felicidades! 🎉");
+        alert.setHeaderText("Felicidades!");
         alert.setContentText("Has completado el juego en " + movimientos + " movimientos.\n\n¡Excelente trabajo!");
         alert.showAndWait();
 
