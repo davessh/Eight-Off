@@ -21,7 +21,7 @@ public abstract class Carta implements Comparable<Carta> {
     }
 
     public boolean isFaceup() {
-        return !faceup;
+        return faceup;
     }
 
     public String toString() {
@@ -77,6 +77,6 @@ public abstract class Carta implements Comparable<Carta> {
         faceup = false;
     }
     public boolean estaCaraAbajo(){
-        return faceup;
+        return !faceup;
     }
 }
