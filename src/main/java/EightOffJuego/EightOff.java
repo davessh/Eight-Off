@@ -208,7 +208,7 @@ public class EightOff {
         switch (ultimoMov.getCategoria()){
             case TT -> {
                 int k = Math.max(1, ultimoMov.getCantidadMovida());
-                ListaSimple<Carta> pack = tableaus[ultimoMov.getIndiceDestino()].getNultimos(k);
+                ListaSimple<Carta> pack = tableaus[ultimoMov.getIndiceDestino()].tomarNultimos(k); // Usar tomarNultimos
                 for (Carta carta : pack.convertirLista()) {
                     tableaus[ultimoMov.getIndiceOrigen()].insertarCarta(carta);
                 }

@@ -11,24 +11,29 @@ public class Foundation {
  public Carta verUltima(){
   return cartas.getFin();
 }
+
  public boolean estaVacio(){
-  return estaVacio();
+  return cartas.getSize() == 0;
  }
 
  public Carta sacarCarta(){
   return cartas.eliminaFinal();
  }
+
  public boolean verificarMovimiento(Carta carta){
-  if(carta == null || carta.getPalo() != palo )
+  if(carta == null || carta.getPalo() != palo)
    return false;
+
   Carta cartaFin = cartas.getFin();
-  int valorCarta = cartaFin.getValorBajo();
+
   if(cartaFin == null){
-   return valorCarta == 1;
+   return carta.getValorBajo() == 1; // Debe ser carta.getValorBajo()
   }
+
   int valorCartaFinal = cartaFin.getValorBajo();
+  int valorCarta = carta.getValorBajo();
   return valorCartaFinal + 1 == valorCarta;
-}
+ }
 
  public boolean meterCarta(Carta carta){
  if (!verificarMovimiento(carta)) {
@@ -37,9 +42,9 @@ public class Foundation {
  cartas.insertaFinal(carta);
  return true;
 }
+
  public void limpiarFoundation(){
-  while(cartas.eliminaFinal() == null){
-  }
+  while(cartas.eliminaFinal() != null){} // != en lugar de ==
  }
 
  public int getSize(){
