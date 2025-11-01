@@ -27,7 +27,7 @@ public class Foundation {
   Carta cartaFin = cartas.getFin();
 
   if(cartaFin == null){
-   return carta.getValorBajo() == 1; // Debe ser carta.getValorBajo()
+   return carta.getValorBajo() == 1;
   }
 
   int valorCartaFinal = cartaFin.getValorBajo();
@@ -44,7 +44,7 @@ public class Foundation {
 }
 
  public void limpiarFoundation(){
-  while(cartas.eliminaFinal() != null){} // != en lugar de ==
+  while(cartas.eliminaFinal() != null){}
  }
 
  public int getSize(){

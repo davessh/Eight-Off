@@ -41,7 +41,7 @@ public class Tableu {
 
         Carta cartaSuperior = verCarta();
         if (cartaSuperior == null) {
-            return !soloRey || carta.getValor() == 13;
+            return carta.getValor() == 13;
         }
 
         boolean mismoPalo = cartaSuperior.getPalo() == carta.getPalo();

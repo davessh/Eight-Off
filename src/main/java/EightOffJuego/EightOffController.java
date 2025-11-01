@@ -2,7 +2,6 @@ package EightOffJuego;
 
 import Cards.*;
 import javafx.animation.ScaleTransition;
-import javafx.animation.TranslateTransition;
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -26,7 +25,7 @@ import java.util.List;
 public class EightOffController {
 
     @FXML private HBox reservasContainer;
-    @FXML private HBox foundationsContainer;
+    @FXML public VBox foundationsContainer;
     @FXML private HBox tableausContainer;
     @FXML private Button btnNuevoJuego;
     @FXML private Button btnUndo;
@@ -42,6 +41,8 @@ public class EightOffController {
     private String origenSeleccionado = null;
     private StackPane paneSeleccionado = null;
     private int movimientos = 0;
+    private int cartasSeleccionadas = 0;
+    private List<StackPane> cartasResaltadas = new ArrayList<>();
 
     @FXML
     private void initialize() {
@@ -52,7 +53,6 @@ public class EightOffController {
 
         crearEstructuraVisual();
 
-        // ✓ AGREGADO: Iniciar el juego automáticamente
         juego.iniciarNuevaPartida();
         actualizarInterfaz();
         lblEstado.setText("¡Juego iniciado! Buena suerte.");
@@ -60,21 +60,18 @@ public class EightOffController {
     }
 
     private void crearEstructuraVisual() {
-        // Crear 8 celdas de reserva
         for (int i = 0; i < 8; i++) {
             StackPane reserva = crearCeldaReserva(i);
             reservasPanes.add(reserva);
             reservasContainer.getChildren().add(reserva);
         }
 
-        // Crear 4 foundations
         Palo[] palos = Palo.values();
         for (int i = 0; i < 4; i++) {
             VBox foundationBox = crearFoundationBox(i, palos[i]);
             foundationsContainer.getChildren().add(foundationBox);
         }
 
-        // Crear 8 tableaus
         for (int i = 0; i < 8; i++) {
             VBox tableau = crearTableauColumn(i);
             tableausPanes.add(tableau);
@@ -115,7 +112,6 @@ public class EightOffController {
         VBox box = new VBox(8);
         box.setAlignment(Pos.CENTER);
 
-        // Símbolo del palo
         Label simbolo = new Label(palo.getFigura());
         simbolo.setFont(Font.font("Arial", FontWeight.BOLD, 28));
         simbolo.setTextFill(palo.getColor().equals("rojo") ? Color.rgb(220, 20, 60) : Color.WHITE);
@@ -125,7 +121,6 @@ public class EightOffController {
         textShadow.setRadius(2);
         simbolo.setEffect(textShadow);
 
-        // Pane de la foundation
         StackPane foundationPane = new StackPane();
         foundationPane.setPrefSize(90, 120);
         foundationPane.setMinSize(90, 120);
@@ -160,7 +155,7 @@ public class EightOffController {
         column.setAlignment(Pos.TOP_CENTER);
         column.setMinWidth(95);
         column.setPrefWidth(95);
-        column.setSpacing(-70); // Espacio negativo para apilar cartas
+        column.setSpacing(-70);
         column.setStyle("-fx-background-color: rgba(26, 92, 26, 0.3);" +
                 "-fx-border-color: rgba(74, 124, 89, 0.6);" +
                 "-fx-border-width: 2;" +
@@ -171,7 +166,6 @@ public class EightOffController {
         column.setMinHeight(400);
         column.setUserData("T" + index);
 
-        // Placeholder para columna vacía
         Label placeholder = new Label("K");
         placeholder.setFont(Font.font("Arial", FontWeight.BOLD, 24));
         placeholder.setTextFill(Color.rgb(255, 255, 255, 0.2));
@@ -185,6 +179,7 @@ public class EightOffController {
 
     @FXML
     private void handleNuevoJuego() {
+        juego = new EightOff();
         juego.iniciarNuevaPartida();
         movimientos = 0;
         limpiarSeleccion();
@@ -192,7 +187,6 @@ public class EightOffController {
         lblEstado.setText("Nueva partida iniciada. ¡Buena suerte!");
         lblMovimientos.setText("Movimientos: 0");
 
-        // Animación de inicio
         ScaleTransition st = new ScaleTransition(Duration.millis(300), tableausContainer);
         st.setFromX(0.9);
         st.setFromY(0.9);
@@ -203,7 +197,7 @@ public class EightOffController {
 
     @FXML
     private void handleUndo() {
-        if (juego.deshacer()) {
+        if (juego.deshacerMovimiento()) {
             movimientos = Math.max(0, movimientos - 1);
             actualizarInterfaz();
             lblMovimientos.setText("Movimientos: " + movimientos);
@@ -225,7 +219,6 @@ public class EightOffController {
         String msg = construirMensajePista(pista);
         lblEstado.setText("💡 Pista: " + msg);
 
-        // Resaltar las áreas involucradas
         resaltarMovimientoPista(pista);
     }
 
@@ -241,19 +234,16 @@ public class EightOffController {
         return "Mover de " + origen + " a " + destino;
     }
 
-    // ✓ IMPLEMENTADO: Resaltar el movimiento sugerido
     private void resaltarMovimientoPista(Movimiento mov) {
         Region origenRegion = null;
         Region destinoRegion = null;
 
-        // Identificar región de origen
         if (mov.getOrigen() == Movimiento.Zona.TABLEAU) {
             origenRegion = tableausPanes.get(mov.getIndiceOrigen());
         } else if (mov.getOrigen() == Movimiento.Zona.RESERVA) {
             origenRegion = reservasPanes.get(mov.getIndiceOrigen());
         }
 
-        // Identificar región de destino
         if (mov.getDestino() == Movimiento.Zona.TABLEAU) {
             destinoRegion = tableausPanes.get(mov.getIndiceDestino());
         } else if (mov.getDestino() == Movimiento.Zona.RESERVA) {
@@ -262,32 +252,26 @@ public class EightOffController {
             destinoRegion = foundationsPanes.get(mov.getIndiceDestino());
         }
 
-        // Aplicar efecto de brillo dorado en origen
         if (origenRegion != null) {
             aplicarResaltadoTemporal(origenRegion, Color.GOLD, 1.5);
         }
 
-        // Aplicar efecto de brillo verde en destino
         if (destinoRegion != null) {
             aplicarResaltadoTemporal(destinoRegion, Color.LIMEGREEN, 1.5);
         }
     }
 
     private void aplicarResaltadoTemporal(Region region, Color color, double duracionSegundos) {
-        // Guardar estilo original
         String estiloOriginal = region.getStyle();
 
-        // Aplicar efecto de brillo
         Glow glow = new Glow(0.8);
         region.setEffect(glow);
 
-        // Agregar borde brillante
         String nuevoEstilo = estiloOriginal +
                 String.format("-fx-border-color: %s; -fx-border-width: 5; -fx-border-style: solid;",
                         toRgbString(color));
         region.setStyle(nuevoEstilo);
 
-        // Animación de escala
         ScaleTransition st = new ScaleTransition(Duration.millis(200), region);
         st.setFromX(1.0);
         st.setFromY(1.0);
@@ -297,7 +281,6 @@ public class EightOffController {
         st.setAutoReverse(true);
         st.play();
 
-        // Remover efectos después de la duración especificada
         PauseTransition pause = new PauseTransition(Duration.seconds(duracionSegundos));
         pause.setOnFinished(e -> {
             region.setEffect(null);
@@ -324,7 +307,6 @@ public class EightOffController {
 
         for (int i = 0; i < 8; i++) {
             StackPane pane = reservasPanes.get(i);
-            // Limpiar contenido anterior (excepto el fondo)
             while (pane.getChildren().size() > 1) {
                 pane.getChildren().remove(1);
             }
@@ -342,7 +324,6 @@ public class EightOffController {
 
         for (int i = 0; i < 4; i++) {
             StackPane pane = foundationsPanes.get(i);
-            // Limpiar contenido anterior (excepto el fondo)
             while (pane.getChildren().size() > 1) {
                 pane.getChildren().remove(1);
             }
@@ -366,7 +347,6 @@ public class EightOffController {
             List<Carta> listaCartas = cartas.convertirLista();
 
             if (listaCartas.isEmpty()) {
-                // Mostrar placeholder
                 Label placeholder = new Label("K");
                 placeholder.setFont(Font.font("Arial", FontWeight.BOLD, 24));
                 placeholder.setTextFill(Color.rgb(255, 255, 255, 0.2));
@@ -375,13 +355,13 @@ public class EightOffController {
             } else {
                 for (int j = 0; j < listaCartas.size(); j++) {
                     Carta carta = listaCartas.get(j);
-                    boolean esUltima = (j == listaCartas.size() - 1);
+                    boolean esInteractiva = (j == listaCartas.size() - 1) || esParteDeEscalera(listaCartas, j);
 
-                    StackPane cartaPane = crearCartaVisual(carta, esUltima);
+                    StackPane cartaPane = crearCartaVisual(carta, esInteractiva);
                     cartaPane.setUserData("T" + i + "-C" + j);
 
-                    if (esUltima) {
-                        configurarDragCarta(cartaPane, i);
+                    if (esInteractiva) {
+                        configurarSeleccionMultiple(cartaPane, i, j, listaCartas);
                     }
 
                     column.getChildren().add(cartaPane);
@@ -390,14 +370,73 @@ public class EightOffController {
         }
     }
 
+    private boolean esParteDeEscalera(List<Carta> cartas, int indice) {
+        if (indice >= cartas.size() - 1) return false;
+
+        Palo paloBase = cartas.get(indice).getPalo();
+        for (int i = indice; i < cartas.size() - 1; i++) {
+            Carta actual = cartas.get(i);
+            Carta siguiente = cartas.get(i + 1);
+
+            if (actual.getPalo() != paloBase || siguiente.getPalo() != paloBase) {
+                return false;
+            }
+            if (actual.getValor() - 1 != siguiente.getValor()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void configurarSeleccionMultiple(StackPane cartaPane, int tableauIdx, int cardIdx, List<Carta> cartas) {
+        cartaPane.setOnMouseClicked(e -> {
+            if (origenSeleccionado == null) {
+                int numCartas = cartas.size() - cardIdx;
+                if (esParteDeEscalera(cartas, cardIdx) || cardIdx == cartas.size() - 1) {
+                    origenSeleccionado = "T" + tableauIdx;
+                    cartasSeleccionadas = numCartas;
+                    cartasResaltadas.clear();
+                    VBox column = tableausPanes.get(tableauIdx);
+                    for (int i = cardIdx; i < cartas.size(); i++) {
+                        StackPane pane = (StackPane) column.getChildren().get(i);
+                        resaltarSeleccion(pane, true);
+                        cartasResaltadas.add(pane);
+                    }
+
+                    lblEstado.setText("Seleccionadas " + numCartas + " carta(s) del Tableau " + (tableauIdx + 1) + ". Elige destino.");
+                } else {
+                    lblEstado.setText("No se puede seleccionar: las cartas no forman una escalera válida");
+                }
+            } else {
+                ejecutarMovimiento("T" + tableauIdx);
+            }
+        });
+
+        cartaPane.setOnDragDetected(e -> {
+            int numCartas = cartas.size() - cardIdx;
+
+            if (esParteDeEscalera(cartas, cardIdx) || cardIdx == cartas.size() - 1) {
+                Dragboard db = cartaPane.startDragAndDrop(TransferMode.MOVE);
+                ClipboardContent content = new ClipboardContent();
+                content.putString("T" + tableauIdx + ":" + numCartas);
+                db.setContent(content);
+
+                origenSeleccionado = "T" + tableauIdx;
+                cartasSeleccionadas = numCartas;
+                paneSeleccionado = cartaPane;
+            }
+
+            e.consume();
+        });
+    }
+
     private StackPane crearCartaVisual(Carta carta, boolean interactiva) {
         StackPane cardContainer = new StackPane();
         cardContainer.setPrefSize(85, 115);
         cardContainer.setMinSize(85, 115);
         cardContainer.setMaxSize(85, 115);
 
-        // Fondo de la carta
-        Rectangle cardBg = new Rectangle(85, 115);
+        Rectangle cardBg = new Rectangle(100, 130);
         cardBg.setFill(Color.WHITE);
         cardBg.setStroke(Color.rgb(51, 51, 51));
         cardBg.setStrokeWidth(2);
@@ -413,32 +452,42 @@ public class EightOffController {
 
         cardContainer.getChildren().add(cardBg);
 
-        // Valor de la carta
         String valorStr = obtenerValorString(carta.getValor());
+        String paloStr = carta.getPalo().getFigura();
         Color colorCarta = carta.getColor().equals("rojo") ? Color.rgb(220, 20, 60) : Color.BLACK;
 
-        // Valor superior izquierda
-        Label valorSup = new Label(valorStr);
-        valorSup.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        valorSup.setTextFill(colorCarta);
-        StackPane.setAlignment(valorSup, Pos.TOP_LEFT);
-        StackPane.setMargin(valorSup, new Insets(5, 0, 0, 8));
+        Label paloSupIzq = new Label(paloStr);
+        paloSupIzq.setFont(Font.font("Arial", FontWeight.BOLD, 25));
+        paloSupIzq.setTextFill(colorCarta);
+        StackPane.setAlignment(paloSupIzq, Pos.TOP_LEFT);
+        StackPane.setMargin(paloSupIzq, new Insets(5, 0, 0, 8));
 
-        // Palo centro
-        Label paloCentro = new Label(carta.getPalo().getFigura());
-        paloCentro.setFont(Font.font("Arial", FontWeight.BOLD, 36));
+        Label valorSupDer = new Label(valorStr);
+        valorSupDer.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        valorSupDer.setTextFill(colorCarta);
+        StackPane.setAlignment(valorSupDer, Pos.TOP_RIGHT);
+        StackPane.setMargin(valorSupDer, new Insets(5, 8, 0, 0));
+
+        Label paloCentro = new Label(paloStr);
+        paloCentro.setFont(Font.font("Arial", FontWeight.BOLD, 40));
         paloCentro.setTextFill(colorCarta);
         StackPane.setAlignment(paloCentro, Pos.CENTER);
 
-        // Valor inferior derecha (invertido)
-        Label valorInf = new Label(valorStr);
-        valorInf.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        valorInf.setTextFill(colorCarta);
-        valorInf.setRotate(180);
-        StackPane.setAlignment(valorInf, Pos.BOTTOM_RIGHT);
-        StackPane.setMargin(valorInf, new Insets(0, 8, 5, 0));
+        Label valorInfIzq = new Label(valorStr);
+        valorInfIzq.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        valorInfIzq.setTextFill(colorCarta);
+        valorInfIzq.setRotate(180);
+        StackPane.setAlignment(valorInfIzq, Pos.BOTTOM_LEFT);
+        StackPane.setMargin(valorInfIzq, new Insets(0, 0, 5, 12));
 
-        cardContainer.getChildren().addAll(valorSup, paloCentro, valorInf);
+        Label paloInfDer = new Label(paloStr);
+        paloInfDer.setFont(Font.font("Arial", FontWeight.BOLD, 25));
+        paloInfDer.setTextFill(colorCarta);
+        paloInfDer.setRotate(180);
+        StackPane.setAlignment(paloInfDer, Pos.BOTTOM_RIGHT);
+        StackPane.setMargin(paloInfDer, new Insets(0, 8, 5, 0));
+
+        cardContainer.getChildren().addAll(paloSupIzq, valorSupDer, paloCentro, valorInfIzq, paloInfDer);
 
         if (interactiva) {
             cardContainer.setOnMouseEntered(e -> {
@@ -469,16 +518,17 @@ public class EightOffController {
     private void configurarEventosReserva(StackPane pane, int index) {
         pane.setOnMouseClicked(e -> {
             if (origenSeleccionado == null) {
-                // Seleccionar origen
                 Carta carta = juego.getTopReservas(index);
                 if (carta != null) {
                     origenSeleccionado = "R" + index;
+                    cartasSeleccionadas = 1;
                     paneSeleccionado = pane;
                     resaltarSeleccion(pane, true);
+                    cartasResaltadas.clear();
+                    cartasResaltadas.add(pane);
                     lblEstado.setText("Carta seleccionada de Reserva " + (index + 1) + ". Elige destino.");
                 }
             } else {
-                // Intentar mover aquí
                 ejecutarMovimiento("R" + index);
             }
         });
@@ -512,20 +562,6 @@ public class EightOffController {
         configurarDragDrop(column, "T" + index);
     }
 
-    private void configurarDragCarta(StackPane cartaPane, int tableauIndex) {
-        cartaPane.setOnDragDetected(e -> {
-            Dragboard db = cartaPane.startDragAndDrop(TransferMode.MOVE);
-            ClipboardContent content = new ClipboardContent();
-            content.putString("T" + tableauIndex);
-            db.setContent(content);
-
-            origenSeleccionado = "T" + tableauIndex;
-            paneSeleccionado = cartaPane;
-
-            e.consume();
-        });
-    }
-
     private void configurarDragOver(Region region) {
         region.setOnDragOver(e -> {
             if (e.getGestureSource() != region && e.getDragboard().hasString()) {
@@ -557,8 +593,16 @@ public class EightOffController {
             boolean success = false;
 
             if (db.hasString()) {
-                String origen = db.getString();
-                origenSeleccionado = origen;
+                String data = db.getString();
+                String[] parts = data.split(":");
+                origenSeleccionado = parts[0];
+
+                if (parts.length > 1) {
+                    cartasSeleccionadas = Integer.parseInt(parts[1]);
+                } else {
+                    cartasSeleccionadas = 1;
+                }
+
                 success = ejecutarMovimientoInterno(destino);
             }
 
@@ -579,7 +623,7 @@ public class EightOffController {
         boolean exito = ejecutarMovimientoInterno(destino);
 
         if (!exito) {
-            lblEstado.setText("❌ Movimiento inválido");
+            lblEstado.setText("Movimiento inválido");
         }
 
         limpiarSeleccion();
@@ -595,35 +639,32 @@ public class EightOffController {
 
         boolean exito = false;
 
-        // Tableau a Tableau
         if (origenTipo == 'T' && destinoTipo == 'T') {
-            // Intentar mover múltiples cartas si es posible
-            exito = juego.moverTaT(origenIdx, destinoIdx, 1);
+            exito = juego.moverTaT(origenIdx, destinoIdx, cartasSeleccionadas);
         }
-        // Tableau a Reserva
         else if (origenTipo == 'T' && destinoTipo == 'R') {
-            exito = juego.moverTaR(origenIdx, destinoIdx);
+            if (cartasSeleccionadas == 1) {
+                exito = juego.moverTableuAReserva(origenIdx, destinoIdx);
+            }
         }
-        // Tableau a Foundation
         else if (origenTipo == 'T' && destinoTipo == 'F') {
-            exito = juego.moverTaF(origenIdx, destinoIdx);
+            if (cartasSeleccionadas == 1) {
+                exito = juego.moverTableauToFoundation(origenIdx, destinoIdx);
+            }
         }
-        // Reserva a Tableau
         else if (origenTipo == 'R' && destinoTipo == 'T') {
-            exito = juego.moverRaT(origenIdx, destinoIdx);
+            exito = juego.moverReservaToTableau(origenIdx, destinoIdx);
         }
-        // Reserva a Foundation
         else if (origenTipo == 'R' && destinoTipo == 'F') {
-            exito = juego.moverRaF(origenIdx, destinoIdx);
+            exito = juego.moverReservaToFoundation(origenIdx, destinoIdx);
         }
 
         if (exito) {
             movimientos++;
             actualizarInterfaz();
             lblMovimientos.setText("Movimientos: " + movimientos);
-            lblEstado.setText("✓ Movimiento realizado");
+            lblEstado.setText("Movimiento realizado");
 
-            // Verificar victoria
             if (juego.evaluarVictoria()) {
                 mostrarVictoria();
             }
@@ -645,24 +686,29 @@ public class EightOffController {
     }
 
     private void limpiarSeleccion() {
+        for (StackPane pane : cartasResaltadas) {
+            resaltarSeleccion(pane, false);
+        }
+        cartasResaltadas.clear();
+
         if (paneSeleccionado != null) {
             resaltarSeleccion(paneSeleccionado, false);
             paneSeleccionado = null;
         }
         origenSeleccionado = null;
+        cartasSeleccionadas = 0;
     }
 
     private void mostrarVictoria() {
-        lblEstado.setText("FELICIDADES! ¡HAS GANADO! ");
+        lblEstado.setText("FELICIDADES! HAS GANADO ");
         lblEstado.setStyle(lblEstado.getStyle() + "-fx-text-fill: #FFD700; -fx-font-size: 20px;");
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("¡Victoria!");
-        alert.setHeaderText("Felicidades!");
-        alert.setContentText("Has completado el juego en " + movimientos + " movimientos.\n\n¡Excelente trabajo!");
+        alert.setTitle("Victoria");
+        alert.setHeaderText("Felicidades");
+        alert.setContentText("Has completado el juego en " + movimientos + " movimientos.\n\n");
         alert.showAndWait();
 
-        // Animación de victoria
         ScaleTransition st = new ScaleTransition(Duration.millis(500), lblEstado);
         st.setFromX(1.0);
         st.setFromY(1.0);

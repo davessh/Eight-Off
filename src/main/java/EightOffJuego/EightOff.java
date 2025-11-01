@@ -62,7 +62,7 @@ public class EightOff {
         while (undo.eliminaFinal() != null){}
     }
 
-    public boolean moverTaR(int from, int to){
+    public boolean moverTableuAReserva(int from, int to){
         Carta mov = tableaus[from].verCarta();
         if (mov == null) return false;
         if (reservas[to].ponerCarta(mov)){
@@ -73,7 +73,7 @@ public class EightOff {
         return false;
     }
 
-    public boolean moverRaT(int from, int to){
+    public boolean moverReservaToTableau(int from, int to){
         Carta mov = reservas[from].verCarta();
         if (mov == null) return false;
         if (tableaus[to].ponerCarta(mov)){
@@ -84,10 +84,10 @@ public class EightOff {
         return false;
     }
 
-    public boolean moverTaF(int from, int to){
+    public boolean moverTableauToFoundation(int from, int to){
         Carta mov = tableaus[from].verCarta();
         if (mov == null) return false;
-        int idx = getIdxFoundation(mov.getPalo());
+        int idx = getPosFoundation(mov.getPalo());
         if (foundations[idx].meterCarta(mov)){
             tableaus[from].sacarCarta();
             undo.insertaFinal(Movimiento.tablaAFundacion(from, idx, mov));
@@ -96,10 +96,10 @@ public class EightOff {
         return false;
     }
 
-    public boolean moverRaF(int from, int to){
+    public boolean moverReservaToFoundation(int from, int to){
         Carta mov = reservas[from].verCarta();
         if (mov == null) return false;
-        int idx = getIdxFoundation(mov.getPalo());
+        int idx = getPosFoundation(mov.getPalo());
         if (foundations[idx].meterCarta(mov)){
             reservas[from].sacarCarta();
             undo.insertaFinal(Movimiento.reservaAFundacion(from, idx, mov));
@@ -108,7 +108,7 @@ public class EightOff {
         return false;
     }
 
-    private int getIdxFoundation(Palo palo){
+    private int getPosFoundation(Palo palo){
         for (int i = 0; i < foundations.length; i++) {
             if (foundations[i].getPalo().equals(palo)) return i;
         }
@@ -116,21 +116,20 @@ public class EightOff {
     }
 
     public Movimiento pista(){
-        // Prioridad 1: Mover de reserva a foundation
         for (int r = 0; r < 8; r++) {
             Carta c = reservas[r].verCarta();
             if (c == null) continue;
-            int f = getIdxFoundation(c.getPalo());
+            int f = getPosFoundation(c.getPalo());
             if (foundations[f].verificarMovimiento(c)) return Movimiento.reservaAFundacion(r, f, c);
         }
-        // Prioridad 2: Mover de tableau a foundation
+
         for (int t = 0; t < 8; t++) {
             Carta c = tableaus[t].verCarta();
             if (c == null) continue;
-            int f = getIdxFoundation(c.getPalo());
+            int f = getPosFoundation(c.getPalo());
             if (foundations[f].verificarMovimiento(c)) return Movimiento.tablaAFundacion(t, f, c);
         }
-        // Prioridad 3: Mover de reserva a tableau
+
         for (int r = 0; r < 8; r++) {
             Carta c = reservas[r].verCarta();
             if (c == null) continue;
@@ -138,7 +137,7 @@ public class EightOff {
                 if (tableaus[t].esMovimientoValido(c)) return Movimiento.reservaATabla(r, t, c);
             }
         }
-        // Prioridad 4: Mover de tableau a tableau
+
         for (int a = 0; a < 8; a++) {
             Carta c = tableaus[a].verCarta();
             if (c == null) continue;
@@ -148,7 +147,7 @@ public class EightOff {
                 }
             }
         }
-        // Prioridad 5: Mover de tableau a reserva vacía
+
         for (int t = 0; t < 8; t++) {
             if (reservas[t].estaVacia()) {
                 for (int z = 0; z < 8; z++) {
@@ -158,7 +157,7 @@ public class EightOff {
             }
         }
 
-        // No hay movimientos disponibles
+
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Sin movimientos disponibles");
         alert.setHeaderText(null);
@@ -169,19 +168,6 @@ public class EightOff {
         return null;
     }
 
-    public boolean sinMovimientos(){
-        for (int i = 0; i < tableaus.length; i++) {
-            System.out.println("Tableau " + i + ": " + tableaus[i].getTam() + " cartas\n");
-        }
-
-        // Verificar victoria
-        if (evaluarVictoria()) {
-            victoria();
-            return false;
-        }
-
-        return pista() == null;
-    }
 
     public boolean evaluarVictoria(){
         for (int i = 0; i < foundations.length; i++) {
@@ -195,13 +181,13 @@ public class EightOff {
 
     public void victoria(){
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("¡Victoria!");
+        alert.setTitle("Victoria");
         alert.setHeaderText(null);
-        alert.setContentText("¡Felicidades, ganaste!");
+        alert.setContentText("Ganaste");
         alert.showAndWait();
     }
 
-    public boolean deshacer(){
+    public boolean deshacerMovimiento(){
         Movimiento ultimoMov = undo.eliminaFinal();
         if (ultimoMov == null) return false;
 
@@ -241,14 +227,13 @@ public class EightOff {
         ListaSimple<Carta> run = tableaus[from].getNultimos(cantidad);
         if (run == null || run.getSize() == 0) return false;
 
-        // Verificar que sea una escalera válida del mismo palo descendente
+        // Verificar que sea una escalera
         if (!esEscaleraValida(run)) return false;
 
         // Verificar que se pueda colocar en el destino
         Carta cartaInferior = run.getPosicion(0);
         if (!tableaus[to].esMovimientoValido(cartaInferior)) return false;
 
-        // Realizar el movimiento
         ListaSimple<Carta> movidas = tableaus[from].tomarNultimos(cantidad);
         for (Carta carta : movidas.convertirLista()) {
             if (!tableaus[to].ponerCarta(carta)) {
@@ -288,8 +273,6 @@ public class EightOff {
     public Carta getTopFoundation(int i){ return foundations[i].verUltima(); }
     public ListaSimple<Carta> getTableau(int idx){
         ListaSimple<Carta> resultado = new ListaSimple<>();
-        // Nota: Tableu no expone directamente su lista,
-        // podrías necesitar agregar un método getter en Tableu
         return resultado;
     }
     public Tableu[] getTableaus() { return tableaus; }
