@@ -19,6 +19,7 @@
     </padding>
 
     <children>
+
         <HBox alignment="CENTER" spacing="30.0" style="-fx-background: linear-gradient(to bottom, #2d5016, #1a472a); -fx-padding: 15; -fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #4a7c59; -fx-border-width: 2;">
             <VBox.margin>
                 <Insets left="20.0" right="20.0" top="10.0" />
@@ -50,6 +51,12 @@
                 </Label>
 
                 <Pane HBox.hgrow="ALWAYS" />
+
+                <Button fx:id="btnHistorial" mnemonicParsing="false" onAction="#handleHistorial" prefHeight="45.0" prefWidth="120.0" style="-fx-background-color: linear-gradient(to bottom, #2196F3, #1976D2); -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-font-size: 14px;" text="📜 Historial">
+                    <effect>
+                        <DropShadow color="#00000080" offsetX="2.0" offsetY="2.0" radius="3.0" />
+                    </effect>
+                </Button>
 
                 <Button fx:id="btnPista" mnemonicParsing="false" onAction="#handlePista" prefHeight="45.0" prefWidth="120.0" style="-fx-background-color: linear-gradient(to bottom, #FF9800, #F57C00); -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-font-size: 14px;" text="💡 Pista">
                     <effect>

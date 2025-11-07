@@ -1,4 +1,3 @@
-
 package EightOffJuego;
 
 import Cards.*;
@@ -10,6 +9,7 @@ public class EightOff {
     private final Celda[] reservas;
     public final Foundation[] foundations;
     private final ListaSimple<Movimiento> undo;
+    private ListaHistorial listaHistorial;
 
     public EightOff() {
         mazo = new Mazo();
@@ -18,6 +18,7 @@ public class EightOff {
         reservas = new Celda[8];
         foundations = new Foundation[4];
         undo = new ListaSimple<>();
+        listaHistorial = new ListaHistorial();
         iniciarComponentes();
     }
 
@@ -34,7 +35,6 @@ public class EightOff {
 
     public void iniciarNuevaPartida(){
         limpiarComponentes();
-        // Repartir 6 cartas a cada uno de los 8 tableaus
         for (int fila = 0; fila < 6; fila++) {
             for (int col = 0; col < 8; col++) {
                 Carta carta = mazo.getMazoCartas().eliminaFin();
@@ -46,7 +46,6 @@ public class EightOff {
         for (Tableu tableau : tableaus) {
             System.out.println(tableau.verCarta());
         }
-        // Colocar 4 cartas en las primeras 4 celdas de reserva
         for (int i = 0; i < 4; i++){
             Carta carta = mazo.getMazoCartas().eliminaFin();
             if (carta != null) {
@@ -62,50 +61,118 @@ public class EightOff {
         while (undo.eliminaFinal() != null){}
     }
 
-    public boolean moverTableuAReserva(int from, int to){
+    // ==================== GUARDAR ESTADO ====================
+    public void guardarEstado(String descripcionMovimiento, int numeroMovimiento) {
+        EstadoJuego estado = new EstadoJuego(tableaus, reservas, foundations,
+                descripcionMovimiento, numeroMovimiento);
+        listaHistorial.agregarEstado(estado);
+    }
+
+    // ==================== RESTAURAR ESTADO ====================
+    public void restaurarEstado(EstadoJuego estado) {
+        limpiarComponentes();
+
+        java.util.List<Carta>[] tableausEstado = estado.getTableaus();
+        for (int i = 0; i < 8; i++) {
+            for (Carta carta : tableausEstado[i]) {
+                tableaus[i].insertarCarta(carta);
+            }
+        }
+
+        Carta[] reservasEstado = estado.getReservas();
+        for (int i = 0; i < 8; i++) {
+            if (reservasEstado[i] != null) {
+                reservas[i].ponerCarta(reservasEstado[i]);
+            }
+        }
+
+        java.util.List<Carta>[] foundationsEstado = estado.getFoundations();
+        for (int i = 0; i < 4; i++) {
+            for (Carta carta : foundationsEstado[i]) {
+                foundations[i].meterCarta(carta);
+            }
+        }
+    }
+
+    // ==================== MOVIMIENTOS ====================
+
+    public boolean moverTableuAReserva(int from, int to, int numeroMov){
         Carta mov = tableaus[from].verCarta();
         if (mov == null) return false;
         if (reservas[to].ponerCarta(mov)){
             tableaus[from].sacarCarta();
+            guardarEstado("Tableau " + (from+1) + " → Reserva " + (to+1), numeroMov);
             undo.insertaFinal(Movimiento.tablaAReserva(from, to, mov));
             return true;
         }
         return false;
     }
 
-    public boolean moverReservaToTableau(int from, int to){
+    public boolean moverReservaToTableau(int from, int to, int numeroMov){
         Carta mov = reservas[from].verCarta();
         if (mov == null) return false;
         if (tableaus[to].ponerCarta(mov)){
             reservas[from].sacarCarta();
+            guardarEstado("Reserva " + (from+1) + " → Tableau " + (to+1), numeroMov);
             undo.insertaFinal(Movimiento.reservaATabla(from, to, mov));
             return true;
         }
         return false;
     }
 
-    public boolean moverTableauToFoundation(int from, int to){
+    public boolean moverTableauToFoundation(int from, int to, int numeroMov){
         Carta mov = tableaus[from].verCarta();
         if (mov == null) return false;
         int idx = getPosFoundation(mov.getPalo());
         if (foundations[idx].meterCarta(mov)){
             tableaus[from].sacarCarta();
+            guardarEstado("Tableau " + (from+1) + " → Fundación " + mov.getPalo().getPaloString(), numeroMov);
             undo.insertaFinal(Movimiento.tablaAFundacion(from, idx, mov));
             return true;
         }
         return false;
     }
 
-    public boolean moverReservaToFoundation(int from, int to){
+    public boolean moverReservaToFoundation(int from, int to, int numeroMov){
         Carta mov = reservas[from].verCarta();
         if (mov == null) return false;
         int idx = getPosFoundation(mov.getPalo());
         if (foundations[idx].meterCarta(mov)){
             reservas[from].sacarCarta();
+            guardarEstado("Reserva " + (from+1) + " → Fundación " + mov.getPalo().getPaloString(), numeroMov);
             undo.insertaFinal(Movimiento.reservaAFundacion(from, idx, mov));
             return true;
         }
         return false;
+    }
+
+    public boolean moverTaT(int from, int to, int cantidad, int numeroMov) {
+        if (from == to || cantidad <= 0) return false;
+        if (from < 0 || from >= tableaus.length || to < 0 || to >= tableaus.length) return false;
+        if (tableaus[from].getTam() < cantidad) return false;
+
+        ListaSimple<Carta> run = tableaus[from].getNultimos(cantidad);
+        if (run == null || run.getSize() == 0) return false;
+
+        if (!esEscaleraValida(run)) return false;
+
+        Carta cartaInferior = run.getPosicion(0);
+        if (!tableaus[to].esMovimientoValido(cartaInferior)) return false;
+
+        ListaSimple<Carta> movidas = tableaus[from].tomarNultimos(cantidad);
+        for (Carta carta : movidas.convertirLista()) {
+            if (!tableaus[to].ponerCarta(carta)) {
+                for (Carta c : movidas.convertirLista()) {
+                    tableaus[from].insertarCarta(c);
+                }
+                return false;
+            }
+        }
+
+        Carta topMovida = movidas.getFin();
+        guardarEstado("Tableau " + (from+1) + " → Tableau " + (to+1) + " (" + cantidad + " cartas)", numeroMov);
+        undo.insertaFinal(Movimiento.tablaATabla(from, to, topMovida, cantidad));
+        return true;
     }
 
     private int getPosFoundation(Palo palo){
@@ -157,7 +224,6 @@ public class EightOff {
             }
         }
 
-
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Sin movimientos disponibles");
         alert.setHeaderText(null);
@@ -167,7 +233,6 @@ public class EightOff {
         iniciarComponentes();
         return null;
     }
-
 
     public boolean evaluarVictoria(){
         for (int i = 0; i < foundations.length; i++) {
@@ -194,7 +259,7 @@ public class EightOff {
         switch (ultimoMov.getCategoria()){
             case TT -> {
                 int k = Math.max(1, ultimoMov.getCantidadMovida());
-                ListaSimple<Carta> pack = tableaus[ultimoMov.getIndiceDestino()].tomarNultimos(k); // Usar tomarNultimos
+                ListaSimple<Carta> pack = tableaus[ultimoMov.getIndiceDestino()].tomarNultimos(k);
                 for (Carta carta : pack.convertirLista()) {
                     tableaus[ultimoMov.getIndiceOrigen()].insertarCarta(carta);
                 }
@@ -219,36 +284,23 @@ public class EightOff {
         return true;
     }
 
-    public boolean moverTaT(int from, int to, int cantidad) {
-        if (from == to || cantidad <= 0) return false;
-        if (from < 0 || from >= tableaus.length || to < 0 || to >= tableaus.length) return false;
-        if (tableaus[from].getTam() < cantidad) return false;
-
-        ListaSimple<Carta> run = tableaus[from].getNultimos(cantidad);
-        if (run == null || run.getSize() == 0) return false;
-
-        // Verificar que sea una escalera
-        if (!esEscaleraValida(run)) return false;
-
-        // Verificar que se pueda colocar en el destino
-        Carta cartaInferior = run.getPosicion(0);
-        if (!tableaus[to].esMovimientoValido(cartaInferior)) return false;
-
-        ListaSimple<Carta> movidas = tableaus[from].tomarNultimos(cantidad);
-        for (Carta carta : movidas.convertirLista()) {
-            if (!tableaus[to].ponerCarta(carta)) {
-                // Revertir si falla
-                for (Carta c : movidas.convertirLista()) {
-                    tableaus[from].insertarCarta(c);
-                }
-                return false;
-            }
-        }
-
-        Carta topMovida = movidas.getFin();
-        undo.insertaFinal(Movimiento.tablaATabla(from, to, topMovida, cantidad));
-        return true;
+    // ==================== GETTERS ====================
+    public ListaHistorial getListaHistorial() {
+        return listaHistorial;
     }
+
+    public Carta getTopTableau(int col){ return tableaus[col].verCarta(); }
+    public Carta getTopReservas(int i){ return reservas[i].verCarta(); }
+    public Carta getTopFoundation(int i){ return foundations[i].verUltima(); }
+
+    public ListaSimple<Carta> getTableau(int idx){
+        ListaSimple<Carta> resultado = new ListaSimple<>();
+        return resultado;
+    }
+
+    public Tableu[] getTableaus() { return tableaus; }
+    public Celda[] getReservas() { return reservas; }
+    public Foundation[] getFoundations() { return foundations; }
 
     private boolean esEscaleraValida(ListaSimple<Carta> cartas) {
         if (cartas.getSize() <= 1) return true;
@@ -267,15 +319,4 @@ public class EightOff {
         }
         return true;
     }
-
-    public Carta getTopTableau(int col){ return tableaus[col].verCarta(); }
-    public Carta getTopReservas(int i){ return reservas[i].verCarta(); }
-    public Carta getTopFoundation(int i){ return foundations[i].verUltima(); }
-    public ListaSimple<Carta> getTableau(int idx){
-        ListaSimple<Carta> resultado = new ListaSimple<>();
-        return resultado;
-    }
-    public Tableu[] getTableaus() { return tableaus; }
-    public Celda[] getReservas() { return reservas; }
-    public Foundation[] getFoundations() { return foundations; }
 }
