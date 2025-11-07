@@ -737,12 +737,24 @@ public class EightOffController {
             VBox root = loader.load();
             HistorialController historialController = loader.getController();
 
-            historialController.setHistorial(juego.getListaHistorial());
+            historialController.setHistorial(juego.getListaHistorial(), juego);
 
             Stage stage = new Stage();
             stage.setTitle("Historial de Movimientos");
             stage.setScene(new Scene(root, 350, 550));
             stage.setResizable(false);
+            stage.showAndWait();
+
+            stage.setOnCloseRequest(event -> {
+                if (!historialController.isConfirmado()) {
+                    NodoHistorial estadoOriginal = juego.getListaHistorial().getActual();
+                    if (estadoOriginal != null) {
+                        juego.restaurarEstado(estadoOriginal.getEstado());
+                        actualizarInterfaz();
+                    }
+                }
+            });
+
             stage.showAndWait();
 
             if (historialController.isConfirmado()) {
@@ -769,5 +781,21 @@ public class EightOffController {
         }
     }
 
+    private void actualizarInterfazConAnimacion() {
+        javafx.animation.FadeTransition fadeOut = new javafx.animation.FadeTransition(
+                javafx.util.Duration.millis(200), tableausContainer);
+        fadeOut.setFromValue(1.0);
+        fadeOut.setToValue(0.3);
 
+        fadeOut.setOnFinished(e -> {
+            actualizarInterfaz();
+            javafx.animation.FadeTransition fadeIn = new javafx.animation.FadeTransition(
+                    javafx.util.Duration.millis(200), tableausContainer);
+            fadeIn.setFromValue(0.3);
+            fadeIn.setToValue(1.0);
+            fadeIn.play();
+        });
+
+        fadeOut.play();
+    }
 }

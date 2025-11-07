@@ -13,13 +13,12 @@ public class EightOffApplication extends Application {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/EightOffJuego/eight-off-game.fxml"));
             Parent root = loader.load();
-            Scene scene = new Scene(root, 1200, 650);
+            Scene scene = new Scene(root, 1920, 1080);
             primaryStage.setTitle("Eight Off Solitaire - Juego de Cartas");
             primaryStage.setScene(scene);
-            primaryStage.setMinWidth(1200);
-            primaryStage.setMinHeight(720);
+            primaryStage.setMinWidth(1920);
+            primaryStage.setMinHeight(1080);
             primaryStage.setResizable(true);
-            primaryStage.setFullScreen(true);
             primaryStage.show();
 
         } catch (Exception e) {
