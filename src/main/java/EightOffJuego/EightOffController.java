@@ -18,6 +18,12 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import EightOffJuego.EstadoJuego;
+import EightOffJuego.HistorialController;
+import Cards.NodoHistorial;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +60,7 @@ public class EightOffController {
         crearEstructuraVisual();
 
         juego.iniciarNuevaPartida();
+        juego.guardarEstado("Estado Inicial", 0);
         actualizarInterfaz();
         lblEstado.setText("¡Juego iniciado! Buena suerte.");
         lblMovimientos.setText("Movimientos: 0");
@@ -639,24 +646,29 @@ public class EightOffController {
 
         boolean exito = false;
 
+        // Tableau a Tableau
         if (origenTipo == 'T' && destinoTipo == 'T') {
-            exito = juego.moverTaT(origenIdx, destinoIdx, cartasSeleccionadas);
+            exito = juego.moverTaT(origenIdx, destinoIdx, cartasSeleccionadas, movimientos + 1);
         }
+        // Tableau a Reserva
         else if (origenTipo == 'T' && destinoTipo == 'R') {
             if (cartasSeleccionadas == 1) {
-                exito = juego.moverTableuAReserva(origenIdx, destinoIdx);
+                exito = juego.moverTableuAReserva(origenIdx, destinoIdx, movimientos + 1);
             }
         }
+        // Tableau a Foundation
         else if (origenTipo == 'T' && destinoTipo == 'F') {
             if (cartasSeleccionadas == 1) {
-                exito = juego.moverTableauToFoundation(origenIdx, destinoIdx);
+                exito = juego.moverTableauToFoundation(origenIdx, destinoIdx, movimientos + 1);
             }
         }
+        // Reserva a Tableau
         else if (origenTipo == 'R' && destinoTipo == 'T') {
-            exito = juego.moverReservaToTableau(origenIdx, destinoIdx);
+            exito = juego.moverReservaToTableau(origenIdx, destinoIdx, movimientos + 1);
         }
+        // Reserva a Foundation
         else if (origenTipo == 'R' && destinoTipo == 'F') {
-            exito = juego.moverReservaToFoundation(origenIdx, destinoIdx);
+            exito = juego.moverReservaToFoundation(origenIdx, destinoIdx, movimientos + 1);
         }
 
         if (exito) {
@@ -718,4 +730,44 @@ public class EightOffController {
         st.setAutoReverse(true);
         st.play();
     }
+
+    public void handleHistorial() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/EightOffJuego/historial.fxml"));
+            VBox root = loader.load();
+            HistorialController historialController = loader.getController();
+
+            historialController.setHistorial(juego.getListaHistorial());
+
+            Stage stage = new Stage();
+            stage.setTitle("Historial de Movimientos");
+            stage.setScene(new Scene(root, 350, 550));
+            stage.setResizable(false);
+            stage.showAndWait();
+
+            if (historialController.isConfirmado()) {
+                NodoHistorial nodoSeleccionado = historialController.getEstadoSeleccionado();
+                if (nodoSeleccionado != null) {
+                    EstadoJuego estado = nodoSeleccionado.getEstado();
+                    juego.restaurarEstado(estado);
+
+                    movimientos = estado.getNumeroMovimiento();
+                    lblMovimientos.setText("Movimientos: " + movimientos);
+                    lblEstado.setText("Estado cargado: " + estado.getDescripcion());
+
+                    actualizarInterfaz();
+                    limpiarSeleccion();
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setContentText("Error al abrir historial: " + e.getMessage());
+            alert.showAndWait();
+        }
+    }
+
+
 }
