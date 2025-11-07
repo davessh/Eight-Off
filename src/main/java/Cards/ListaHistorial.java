@@ -41,6 +41,15 @@ public class ListaHistorial {
 
     public void setActual(NodoHistorial nodo) {
         actual = nodo;
+
+        // Actualizar 'fin' si es necesario
+        if (nodo != null) {
+            NodoHistorial temp = nodo;
+            while (temp.getSiguiente() != null) {
+                temp = temp.getSiguiente();
+            }
+            fin = temp;
+        }
     }
 
     public NodoHistorial getInicio() {
@@ -51,6 +60,9 @@ public class ListaHistorial {
         return fin;
     }
 
+    /**
+     * Obtiene las descripciones de todos los estados en el historial
+     */
     public List<String> obtenerDescripciones() {
         List<String> descripciones = new ArrayList<>();
         NodoHistorial nodo = inicio;
@@ -64,6 +76,9 @@ public class ListaHistorial {
         return descripciones;
     }
 
+    /**
+     * Obtiene todos los nodos del historial como lista
+     */
     public List<NodoHistorial> obtenerNodos() {
         List<NodoHistorial> nodos = new ArrayList<>();
         NodoHistorial nodo = inicio;
@@ -74,6 +89,9 @@ public class ListaHistorial {
         return nodos;
     }
 
+    /**
+     * Obtiene el tamaño actual del historial
+     */
     public int getSize() {
         int count = 0;
         NodoHistorial nodo = inicio;
@@ -84,6 +102,9 @@ public class ListaHistorial {
         return count;
     }
 
+    /**
+     * Obtiene el índice del nodo actual
+     */
     public int getIndiceActual() {
         int indice = 0;
         NodoHistorial nodo = inicio;
@@ -93,5 +114,43 @@ public class ListaHistorial {
             indice++;
         }
         return -1;
+    }
+
+    /**
+     * Elimina todos los nodos posteriores a un nodo dado
+     * Útil para crear un nuevo branch desde un punto anterior
+     */
+    public void eliminarPosteriores(NodoHistorial nodo) {
+        if (nodo == null) return;
+
+        // Cortar la cadena
+        nodo.setSiguiente(null);
+
+        // Actualizar fin
+        fin = nodo;
+
+        // Si el actual estaba después del nodo, actualizarlo
+        boolean actualEliminado = false;
+        NodoHistorial temp = inicio;
+        while (temp != null && temp != actual) {
+            if (temp == nodo) {
+                actualEliminado = true;
+                break;
+            }
+            temp = temp.getSiguiente();
+        }
+
+        if (actualEliminado) {
+            actual = nodo;
+        }
+    }
+
+    /**
+     * Limpia todo el historial
+     */
+    public void limpiar() {
+        inicio = null;
+        fin = null;
+        actual = null;
     }
 }
